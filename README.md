@@ -17,12 +17,14 @@ of cfn-lint is available, so we can always have up-to-date docker image availabl
 The images are published to public ECR repository: https://gallery.ecr.aws/s4a2b7m4/cfn-lint
 
 To get the latest release of cfn-lint, run:
-```commandline
+
+```
 docker pull public.ecr.aws/s4a2b7m4/cfn-lint:latest
 ```
 
 If you want a specific version, run:
-```commandline
+
+```
 docker pull public.ecr.aws/s4a2b7m4/cfn-lint:v0.86.3
 ```
 
