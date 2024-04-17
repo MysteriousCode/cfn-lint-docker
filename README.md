@@ -51,7 +51,20 @@ If you want a specific version, run:
 docker pull public.ecr.aws/s4a2b7m4/cfn-lint:v0.86.3
 ```
 
-### Not sure if you can trust this repo?
+
+## Examples
+
+In Jenkins Pipelines, you need to overwrite the entrypoint, as the cfn-lint's Dockerfile
+does not follow the [official docker image consistency guidelines](https://github.com/docker-library/official-images#consistency):
+
+```
+docker.image('mysteriouscode/cfn-lint:latest').inside("--entrypoint=''") {
+    sh "cfn-lint --info"
+}
+```
+
+
+## Not sure if you can trust this repo?
 
 We have created this repository as a public service, and all of it is publicly 
 visible - you can check out the .github/workflows/ files to see the exact
