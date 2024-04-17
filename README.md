@@ -54,13 +54,28 @@ docker pull public.ecr.aws/s4a2b7m4/cfn-lint:v0.86.3
 
 ## Examples
 
-In Jenkins Pipelines, you need to overwrite the entrypoint, as the cfn-lint's Dockerfile
+In most CI environments, you'll need to overwrite the entrypoint, as the cfn-lint's Dockerfile
 does not follow the [official docker image consistency guidelines](https://github.com/docker-library/official-images#consistency):
+
+
+### Jenkins Pipelines
 
 ```
 docker.image('mysteriouscode/cfn-lint:latest').inside("--entrypoint=''") {
     sh "cfn-lint --info"
 }
+```
+
+### GitLab CI
+
+
+```
+lint:
+  image:
+    name: mysteriouscode/cfn-lint:latest
+    entrypoint: [""]
+  script:
+    - cfn-lint --info
 ```
 
 
