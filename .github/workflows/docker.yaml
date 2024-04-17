@@ -9,6 +9,7 @@ env:
   AWS_REGION : us-east-1
   ECR_REGISTRY: public.ecr.aws
   ECR_REPOSITORY: s4a2b7m4/cfn-lint
+  DOCKERHUB_REPOSITORY: mysteriouscode/cfn-lint
   IAM_ROLE: arn:aws:iam::971283385982:role/public-cfn-lint-docker-repo-GithubRole-bxXOZEoTdfIq
 
 permissions:
@@ -60,6 +61,11 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
         with:
           registry-type: public
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build and push image
         if: steps.check-exists.outputs.continue_building  == 'true'
         env:
@@ -71,4 +77,10 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $DOCKERHUB_REPOSITORY:latest
+          docker push $DOCKERHUB_REPOSITORY:latest
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $DOCKERHUB_REPOSITORY:$IMAGE_TAG
+          docker push $DOCKERHUB_REPOSITORY:$IMAGE_TAG
+          
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
