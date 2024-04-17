@@ -1,0 +1,74 @@
+name: Build docker image
+
+on:
+  schedule:
+    - cron: "30 5 * * *"
+  workflow_dispatch: ~
+
+env:
+  AWS_REGION : us-east-1
+  ECR_REGISTRY: public.ecr.aws
+  ECR_REPOSITORY: s4a2b7m4/cfn-lint
+  IAM_ROLE: arn:aws:iam::971283385982:role/public-cfn-lint-docker-repo-GithubRole-bxXOZEoTdfIq
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  BuildAndPush:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find latest cfn-lint release
+        id: fetch-latest-release
+        uses: pozetroninc/github-action-get-latest-release@v0.7.0
+        with:
+          owner: aws-cloudformation
+          repo: cfn-lint
+          excludes: prerelease,draft
+      - name: Check if image already exist
+        id: check-exists
+        env:
+          IMAGE_TAG: ${{ steps.fetch-latest-release.outputs.release }}
+        run: |
+          set +e
+          echo "Looking for $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          docker manifest inspect $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          if [ $? -eq 0 ]; then
+            echo "Image exists"
+            echo "continue_building=false" >> $GITHUB_OUTPUT
+          else
+            echo "Image does not exist"
+            echo "continue_building=true" >> $GITHUB_OUTPUT
+          fi
+      - name: Fetch release package
+        if: steps.check-exists.outputs.continue_building  == 'true'
+        uses: Legion2/download-release-action@v2.1.0
+        with:
+          repository: aws-cloudformation/cfn-lint
+          tag: ${{ steps.fetch-latest-release.outputs.release }}
+      - name: Configure AWS credentials
+        if: steps.check-exists.outputs.continue_building  == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.IAM_ROLE }}
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Login to ECR
+        if: steps.check-exists.outputs.continue_building  == 'true'
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
+      - name: Build and push image
+        if: steps.check-exists.outputs.continue_building  == 'true'
+        env:
+          IMAGE_TAG: ${{ steps.fetch-latest-release.outputs.release }}
+        run: |
+          mv cfn-lint-* cfn-lint
+          cd cfn-lint/
+          docker build . --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT

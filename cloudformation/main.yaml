@@ -1,0 +1,32 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Resources for Github actions
+
+Resources:
+  GithubRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - sts:AssumeRoleWithWebIdentity
+            Effect: Allow
+            Principal:
+              Federated: !Sub "arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com"
+            Condition:
+              StringEquals:
+                "token.actions.githubusercontent.com:sub": "repo:MysteriousCode/cfn-lint-docker:ref:refs/heads/main"
+                "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+      Policies:
+        - PolicyName: permissions-for-bitbucket
+          PolicyDocument:
+            Statement:
+              - Action:
+                  - sts:GetServiceBearerToken
+                  - ecr-public:GetAuthorizationToken
+                  - ecr-public:BatchCheckLayerAvailability
+                  - ecr-public:PutImage
+                  - ecr-public:InitiateLayerUpload
+                  - ecr-public:UploadLayerPart
+                  - ecr-public:CompleteLayerUpload
+                Effect: Allow
+                Resource: "*"
