@@ -37,18 +37,18 @@ docker pull mysteriouscode/cfn-lint:v0.86.3
 
 ### From ECR 
 
-Public ECR repository: https://gallery.ecr.aws/s4a2b7m4/cfn-lint
+Public ECR repository: https://gallery.ecr.aws/mysteriouscode/cfn-lint
 
 To get the latest release of cfn-lint, run:
 
 ```
-docker pull public.ecr.aws/s4a2b7m4/cfn-lint:latest
+docker pull public.ecr.aws/mysteriouscode/cfn-lint:latest
 ```
 
 If you want a specific version, run:
 
 ```
-docker pull public.ecr.aws/s4a2b7m4/cfn-lint:v0.86.3
+docker pull public.ecr.aws/mysteriouscode/cfn-lint:v0.86.3
 ```
 
 
