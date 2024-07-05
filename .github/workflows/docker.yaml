@@ -42,12 +42,9 @@ jobs:
             echo "Image does not exist"
             echo "continue_building=true" >> $GITHUB_OUTPUT
           fi
-      - name: Fetch release package
+      - name: Checkout
         if: steps.check-exists.outputs.continue_building  == 'true'
-        uses: Legion2/download-release-action@v2.1.0
-        with:
-          repository: aws-cloudformation/cfn-lint
-          tag: ${{ steps.fetch-latest-release.outputs.release }}
+        uses: actions/checkout@v4
       - name: Configure AWS credentials
         if: steps.check-exists.outputs.continue_building  == 'true'
         uses: aws-actions/configure-aws-credentials@v4
@@ -62,6 +59,7 @@ jobs:
         with:
           registry-type: public
       - name: Login to Docker Hub
+        if: steps.check-exists.outputs.continue_building  == 'true'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -73,9 +71,8 @@ jobs:
           IMAGE_TAG: ${{ steps.fetch-latest-release.outputs.release }}
         run: |
           export MAJOR_VERSION="${IMAGE_TAG%%.*}"
-          mv cfn-lint-* cfn-lint
-          cd cfn-lint/
-          docker build . --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          
+          docker build --build-arg CFN_LINT_VERSION=$IMAGE_TAG --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           
           docker tag  $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$MAJOR_VERSION

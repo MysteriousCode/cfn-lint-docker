@@ -6,22 +6,20 @@ This repository was created to automatically build and publish public docker ima
 [aws-cloudformation/cfn-lint](https://github.com/aws-cloudformation/cfn-lint).
 
 Since there's no official docker repository for [cfn-lint](https://github.com/aws-cloudformation/cfn-lint)
-we have decided to create this repo and use Github Actions to automatically
+we have decided to create this repo and use GitHub Actions to automatically
 build a new docker image for each cfn-lint [release](https://github.com/aws-cloudformation/cfn-lint/releases).
 
 The GitHub Actions in this repo are triggered each day to check if a new release
 of cfn-lint is available, so we can always have up-to-date docker image available!
 
-## Usage
+## Where to get it
 
 The images are published to a public ECR and Docker Hub repositories.
-From there, use cfn-lint as usual - we simply use the [Dockerfile](https://github.com/aws-cloudformation/cfn-lint/blob/main/Dockerfile)
-provided by [cfn-lint](https://github.com/aws-cloudformation/cfn-lint) repository, we do not apply any changes.
+From there, use cfn-lint as usual - we simply build cfn-lint from their repository, see [Dockerfile](Dockerfile).
 
 ### From Docker Hub
 
 Docker Hub repository: https://hub.docker.com/r/mysteriouscode/cfn-lint
-
 
 To get the latest release of cfn-lint, run:
 
@@ -32,7 +30,7 @@ docker pull mysteriouscode/cfn-lint
 If you want a specific version, run:
 
 ```
-docker pull mysteriouscode/cfn-lint:v0.86.3
+docker pull mysteriouscode/cfn-lint:v0.87.9
 ```
 
 You can also use major versions:
@@ -54,7 +52,7 @@ docker pull public.ecr.aws/mysteriouscode/cfn-lint:latest
 If you want a specific version, run:
 
 ```
-docker pull public.ecr.aws/mysteriouscode/cfn-lint:v0.86.3
+docker pull public.ecr.aws/mysteriouscode/cfn-lint:v0.87.9
 ```
 
 You can also use major versions:
@@ -63,38 +61,48 @@ You can also use major versions:
 docker pull public.ecr.aws/mysteriouscode/cfn-lint:v1
 ```
 
-## Examples
+## Usage
 
-In most CI environments, you'll need to overwrite the entrypoint, as the cfn-lint's Dockerfile
-does not follow the [official docker image consistency guidelines](https://github.com/docker-library/official-images#consistency):
-
+Most CI environments mount your code into the container automatically and correctly set the workdir, so all you need
+ to so is run `cfn-lint`. We use `--info` argument in the examples below to print out a little more information on what
+`cfn-lint` is doing.
 
 ### Jenkins Pipelines
 
 ```
-docker.image('mysteriouscode/cfn-lint:latest').inside("--entrypoint=''") {
+docker.image('mysteriouscode/cfn-lint:latest') {
     sh "cfn-lint --info"
 }
 ```
 
 ### GitLab CI
 
-
 ```
 lint:
   image:
     name: mysteriouscode/cfn-lint:latest
-    entrypoint: [""]
   script:
     - cfn-lint --info
+```
+
+### Command line
+
+Mount your files using `-v` to any directory inside the container (we're using `/data` in this example) and set the
+workdir (`-w` or `--workdir`) to that directory:
+
+```
+docker run -v `pwd`:/data -w /data mysteriouscode/cfn-lint:v0 cfn-lint --info
 ```
 
 
 ## Not sure if you can trust this repo?
 
 We have created this repository as a public service, and all of it is publicly 
-visible - you can check out the .github/workflows/ files to see the exact
+visible - you can check out the `.github/workflows/` files to see the exact
 steps that are used to build the docker image.
 
 We also use this repository to store the CloudFormation template we use to authorise
-GitHub access to the ECR repository - you can find it in cloudformation/ directory.
+GitHub access to the ECR repository - you can find it in `cloudformation/` directory.
+
+All commits in this repo are signed with GPG keys, see 
+[GitHub's documentation on signed commits](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification).
