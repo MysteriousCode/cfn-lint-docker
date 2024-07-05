@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: Find latest cfn-lint release
         id: fetch-latest-release
-        uses: pozetroninc/github-action-get-latest-release@v0.7.0
+        uses: pozetroninc/github-action-get-latest-release@v0.8.0
         with:
           owner: aws-cloudformation
           repo: cfn-lint
@@ -68,19 +68,32 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build and push image
         if: steps.check-exists.outputs.continue_building  == 'true'
+        shell: bash
         env:
           IMAGE_TAG: ${{ steps.fetch-latest-release.outputs.release }}
         run: |
+          export MAJOR_VERSION="${IMAGE_TAG%%.*}"
           mv cfn-lint-* cfn-lint
           cd cfn-lint/
           docker build . --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           
-          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $DOCKERHUB_REPOSITORY:latest
-          docker push $DOCKERHUB_REPOSITORY:latest
+          docker tag  $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$MAJOR_VERSION
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$MAJOR_VERSION
+
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $DOCKERHUB_REPOSITORY:$IMAGE_TAG
           docker push $DOCKERHUB_REPOSITORY:$IMAGE_TAG
+          
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $DOCKERHUB_REPOSITORY:$MAJOR_VERSION
+          docker push $DOCKERHUB_REPOSITORY:$MAJOR_VERSION
+          
+          if [[ "$MAJOR_VERSION" == "v1" ]]
+          then
+              docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+              docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          
+              docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $DOCKERHUB_REPOSITORY:latest
+              docker push $DOCKERHUB_REPOSITORY:latest
+          fi
           
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
