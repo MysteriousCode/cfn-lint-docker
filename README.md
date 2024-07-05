@@ -35,6 +35,12 @@ If you want a specific version, run:
 docker pull mysteriouscode/cfn-lint:v0.86.3
 ```
 
+You can also use major versions:
+
+```
+docker pull mysteriouscode/cfn-lint:v1
+```
+
 ### From ECR 
 
 Public ECR repository: https://gallery.ecr.aws/mysteriouscode/cfn-lint
@@ -51,6 +57,11 @@ If you want a specific version, run:
 docker pull public.ecr.aws/mysteriouscode/cfn-lint:v0.86.3
 ```
 
+You can also use major versions:
+
+```
+docker pull public.ecr.aws/mysteriouscode/cfn-lint:v1
+```
 
 ## Examples
 
