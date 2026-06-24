@@ -45,6 +45,12 @@ jobs:
       - name: Checkout
         if: steps.check-exists.outputs.continue_building  == 'true'
         uses: actions/checkout@v7
+      - name: Set up QEMU
+        if: steps.check-exists.outputs.continue_building  == 'true'
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        if: steps.check-exists.outputs.continue_building  == 'true'
+        uses: docker/setup-buildx-action@v3
       - name: Configure AWS credentials
         if: steps.check-exists.outputs.continue_building  == 'true'
         uses: aws-actions/configure-aws-credentials@v6.2.0
@@ -71,26 +77,25 @@ jobs:
           IMAGE_TAG: ${{ steps.fetch-latest-release.outputs.release }}
         run: |
           export MAJOR_VERSION="${IMAGE_TAG%%.*}"
-          
-          docker build --build-arg CFN_LINT_VERSION=$IMAGE_TAG --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          
-          docker tag  $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$MAJOR_VERSION
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$MAJOR_VERSION
 
-          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $DOCKERHUB_REPOSITORY:$IMAGE_TAG
-          docker push $DOCKERHUB_REPOSITORY:$IMAGE_TAG
-          
-          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $DOCKERHUB_REPOSITORY:$MAJOR_VERSION
-          docker push $DOCKERHUB_REPOSITORY:$MAJOR_VERSION
-          
+          TAGS=(
+            --tag "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+            --tag "$ECR_REGISTRY/$ECR_REPOSITORY:$MAJOR_VERSION"
+            --tag "$DOCKERHUB_REPOSITORY:$IMAGE_TAG"
+            --tag "$DOCKERHUB_REPOSITORY:$MAJOR_VERSION"
+          )
+
           if [[ "$MAJOR_VERSION" == "v1" ]]
           then
-              docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
-              docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          
-              docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $DOCKERHUB_REPOSITORY:latest
-              docker push $DOCKERHUB_REPOSITORY:latest
+              TAGS+=(--tag "$ECR_REGISTRY/$ECR_REPOSITORY:latest")
+              TAGS+=(--tag "$DOCKERHUB_REPOSITORY:latest")
           fi
-          
+
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --build-arg CFN_LINT_VERSION="$IMAGE_TAG" \
+            "${TAGS[@]}" \
+            --push \
+            .
+
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
