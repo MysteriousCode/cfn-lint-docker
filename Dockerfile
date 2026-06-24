@@ -5,5 +5,6 @@ ADD https://github.com/aws-cloudformation/cfn-lint/archive/refs/tags/${CFN_LINT_
 RUN cd /root && tar -xzf cfn-lint.tar.gz && rm -f cfn-lint.tar.gz && mv cfn-lint-* cfn-lint
 RUN pip install /root/cfn-lint/
 RUN rm -rf /root/cfn-lint/
+RUN cfn-lint --update-specs
 
 CMD ["cfn-lint"]
