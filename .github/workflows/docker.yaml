@@ -44,10 +44,10 @@ jobs:
           fi
       - name: Checkout
         if: steps.check-exists.outputs.continue_building  == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Configure AWS credentials
         if: steps.check-exists.outputs.continue_building  == 'true'
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6.2.0
         with:
           role-to-assume: ${{ env.IAM_ROLE }}
           role-session-name: GitHub_to_AWS_via_FederatedOIDC
